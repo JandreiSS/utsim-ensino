@@ -3,11 +3,15 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use std::process::ExitCode;
+use std::sync::Arc;
 
 use eframe::egui;
 use utsim_ensino_store::perfil::Perfil;
 use utsim_ensino_ui::App;
 use utsim_ensino_ui::texto::NOME_APP;
+
+/// The icon of the window and the taskbar.
+const ICONE: &[u8] = include_bytes!("../../../assets/icone/familia/ensino_256.png");
 
 struct Janela(App);
 
@@ -36,11 +40,19 @@ fn main() -> ExitCode {
         eprintln!("erro: não encontrei a pasta do usuário");
         return ExitCode::FAILURE;
     };
+    let mut viewport = egui::ViewportBuilder::default()
+        .with_title(NOME_APP)
+        .with_inner_size([1180.0, 800.0])
+        .with_min_inner_size([760.0, 480.0]);
+    if let Some((w, h, rgba)) = utsim_ui_tema::familia::png_rgba(ICONE) {
+        viewport = viewport.with_icon(Arc::new(egui::IconData {
+            rgba,
+            width: w as u32,
+            height: h as u32,
+        }));
+    }
     let options = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default()
-            .with_title(NOME_APP)
-            .with_inner_size([1180.0, 800.0])
-            .with_min_inner_size([760.0, 480.0]),
+        viewport,
         ..Default::default()
     };
     let result = eframe::run_native(
