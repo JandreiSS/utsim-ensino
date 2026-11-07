@@ -40,6 +40,8 @@ trap 'rm -rf "$PASTA"' EXIT
 mkdir -p "$PASTA/ensino/bin" "$PASTA/ensino/manual"
 cp "$BIN" "$PASTA/ensino/bin/"
 cp docs/manual/src/ensino.md "$PASTA/ensino/manual/"
+# Os pacotes de missões fora da campanha: o app os lista sozinho (bin/../pacotes).
+cp -r ensino/pacotes "$PASTA/ensino/pacotes"
 
 if grep -q "^## \[ensino-$VERSAO\]" CHANGELOG.md; then
     bash scripts/notas-versao.sh "ensino-$VERSAO" > "$PASTA/notas.md"
