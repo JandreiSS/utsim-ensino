@@ -2,10 +2,12 @@
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use std::path::Path;
 use std::process::ExitCode;
 use std::sync::Arc;
 
 use eframe::egui;
+use utsim_ensino_store::caso;
 use utsim_ensino_store::perfil::Perfil;
 use utsim_ensino_ui::App;
 use utsim_ensino_ui::texto::NOME_APP;
@@ -21,6 +23,27 @@ impl eframe::App for Janela {
     }
 }
 
+/// Prints the result of a builder command (and writes it to `arquivo`, since the release
+/// build on Windows has no console).
+fn relatar(r: Result<String, utsim_ensino_store::Erro>, arquivo: Option<&Path>) -> ExitCode {
+    match r {
+        Ok(t) => {
+            println!("{t}");
+            if let Some(a) = arquivo {
+                let _ = std::fs::write(a, &t);
+            }
+            ExitCode::SUCCESS
+        }
+        Err(e) => {
+            eprintln!("erro: {e}");
+            if let Some(a) = arquivo {
+                let _ = std::fs::write(a, format!("erro: {e}\n"));
+            }
+            ExitCode::FAILURE
+        }
+    }
+}
+
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
     match args.first().map(String::as_str) {
@@ -30,9 +53,33 @@ fn main() -> ExitCode {
         }
         Some("--ajuda" | "--help" | "-h") => {
             println!(
-                "utsim-ensino [--missao <id>]\n  abre a janela do UTSim Ensino\n  --missao ato4/ventilador: abre essa missão direto (demonstração em aula)\n  UTSIM_ENSINO_PERFIL=<pasta>: guarda o perfil nessa pasta (computadores de laboratório)"
+                "utsim-ensino [--missao <id>]\n  abre a janela do UTSim Ensino\n  --missao ato4/ventilador: abre essa missão direto (demonstração em aula)\n  UTSIM_ENSINO_PERFIL=<pasta>: guarda o perfil nessa pasta (computadores de laboratório)\n\nConstrutor de casos (o resultado também fica em <pasta>/conferencia.txt):\n  utsim-ensino caso <modelo.ron> <pasta> [título]: missão de rascunho a partir de um modelo\n  utsim-ensino conferir <pasta|pacote.utse>: confere as missões de um pacote\n  utsim-ensino pacote <pasta> <pacote.utse>: empacota a pasta"
             );
             return ExitCode::SUCCESS;
+        }
+        Some("caso") if args.len() >= 3 => {
+            let titulo = args.get(3).cloned().unwrap_or_else(|| "Missão nova".into());
+            return relatar(
+                caso::criar_caso(Path::new(&args[1]), Path::new(&args[2]), &titulo),
+                None,
+            );
+        }
+        Some("conferir") if args.len() >= 2 => {
+            let alvo = Path::new(&args[1]);
+            let arquivo = alvo.is_dir().then(|| alvo.join("conferencia.txt"));
+            return relatar(caso::conferir_pacote(alvo), arquivo.as_deref());
+        }
+        Some("pacote") if args.len() >= 3 => {
+            return relatar(
+                caso::empacotar(Path::new(&args[1]), Path::new(&args[2]))
+                    .map(|p| format!("pacote gravado em {}", p.display())),
+                None,
+            );
+        }
+        // A builder command with missing arguments: never open the window by accident.
+        Some("caso" | "conferir" | "pacote") => {
+            eprintln!("faltam argumentos; veja utsim-ensino --ajuda");
+            return ExitCode::FAILURE;
         }
         _ => {}
     }
