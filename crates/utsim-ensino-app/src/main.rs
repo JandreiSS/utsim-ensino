@@ -2,7 +2,7 @@
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::sync::Arc;
 
@@ -53,7 +53,7 @@ fn main() -> ExitCode {
         }
         Some("--ajuda" | "--help" | "-h") => {
             println!(
-                "utsim-ensino [--missao <id>]\n  abre a janela do UTSim Ensino\n  --missao ato4/ventilador: abre essa missão direto (demonstração em aula)\n  UTSIM_ENSINO_PERFIL=<pasta>: guarda o perfil nessa pasta (computadores de laboratório)\n\nConstrutor de casos (o resultado também fica em <pasta>/conferencia.txt):\n  utsim-ensino caso <modelo.ron> <pasta> [título]: missão de rascunho a partir de um modelo\n  utsim-ensino conferir <pasta|pacote.utse>: confere as missões de um pacote\n  utsim-ensino pacote <pasta> <pacote.utse>: empacota a pasta"
+                "utsim-ensino [--pacote <pasta|pacote.utse>] [--missao <id>]\n  abre a janela do UTSim Ensino\n  --pacote: abre esse pacote de missões no lugar da campanha\n  --missao ato4/ventilador: abre essa missão direto (demonstração em aula)\n  UTSIM_ENSINO_PERFIL=<pasta>: guarda o perfil nessa pasta (computadores de laboratório)\n\nConstrutor de casos (o resultado também fica em <pasta>/conferencia.txt):\n  utsim-ensino caso <modelo.ron> <pasta> [título]: missão de rascunho a partir de um modelo\n  utsim-ensino conferir <pasta|pacote.utse>: confere as missões de um pacote\n  utsim-ensino pacote <pasta> <pacote.utse>: empacota a pasta"
             );
             return ExitCode::SUCCESS;
         }
@@ -83,10 +83,13 @@ fn main() -> ExitCode {
         }
         _ => {}
     }
-    let missao = match args.first().map(String::as_str) {
-        Some("--missao") => args.get(1).cloned(),
-        _ => None,
+    let valor = |nome: &str| {
+        args.iter()
+            .position(|a| a == nome)
+            .and_then(|i| args.get(i + 1).cloned())
     };
+    let missao = valor("--missao");
+    let pacote = valor("--pacote").map(PathBuf::from);
     let Some(perfil) = Perfil::padrao() else {
         eprintln!("erro: não encontrei a pasta do usuário");
         return ExitCode::FAILURE;
@@ -113,6 +116,11 @@ fn main() -> ExitCode {
             cc.egui_ctx
                 .set_pixels_per_point(cc.egui_ctx.pixels_per_point().max(1.1));
             let mut app = App::new(perfil);
+            if let Some(c) = &pacote
+                && let Err(e) = app.abrir_pacote(c)
+            {
+                app.mensagem = Some(format!("o pacote não abriu: {e}"));
+            }
             if let Some(id) = &missao
                 && app.config.identidade.is_some()
                 && let Some(i) = app.pacote.as_ref().and_then(|p| p.indice(id))
