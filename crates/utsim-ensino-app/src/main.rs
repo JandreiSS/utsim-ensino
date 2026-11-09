@@ -19,6 +19,7 @@ struct Janela(App);
 
 impl eframe::App for Janela {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        utsim_ui_tema::maximizar_no_inicio(ui.ctx());
         self.0.draw(ui);
     }
 }
