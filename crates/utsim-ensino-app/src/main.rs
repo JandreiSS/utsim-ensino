@@ -97,7 +97,8 @@ fn main() -> ExitCode {
     let mut viewport = egui::ViewportBuilder::default()
         .with_title(NOME_APP)
         .with_inner_size([1180.0, 800.0])
-        .with_min_inner_size([760.0, 480.0]);
+        .with_min_inner_size([760.0, 480.0])
+        .with_maximized(true);
     if let Some((w, h, rgba)) = utsim_ui_tema::familia::png_rgba(ICONE) {
         viewport = viewport.with_icon(Arc::new(egui::IconData {
             rgba,

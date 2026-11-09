@@ -57,7 +57,7 @@ fi
     --descricao "Ensino de engenharia de produção pela simulação: o jogo de problemas da indústria e a sala de aula" \
     --subtitulo "Ensino pela simulação" \
     --autor "UTSim" \
-    --cor "#F2A33A" \
+    --cor "#8A5CE6" \
     --icone assets/icone/familia/ensino_256.png \
     --versao "$VERSAO" \
     --canal "$CANAL" \
