@@ -10,7 +10,7 @@ use eframe::egui;
 use utsim_ensino_store::caso;
 use utsim_ensino_store::perfil::Perfil;
 use utsim_ensino_ui::App;
-use utsim_ensino_ui::texto::NOME_APP;
+use utsim_ensino_ui::texto::{self, Idioma, NOME_APP};
 
 /// The icon of the window and the taskbar.
 const ICONE: &[u8] = include_bytes!("../../../assets/icone/familia/ensino_256.png");
@@ -35,9 +35,10 @@ fn relatar(r: Result<String, utsim_ensino_store::Erro>, arquivo: Option<&Path>) 
             ExitCode::SUCCESS
         }
         Err(e) => {
-            eprintln!("erro: {e}");
+            let t = texto::f(texto::erro(), &[&e]);
+            eprintln!("{t}");
             if let Some(a) = arquivo {
-                let _ = std::fs::write(a, format!("erro: {e}\n"));
+                let _ = std::fs::write(a, t + "\n");
             }
             ExitCode::FAILURE
         }
@@ -46,19 +47,30 @@ fn relatar(r: Result<String, utsim_ensino_store::Erro>, arquivo: Option<&Path>) 
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
+    let valor = |nome: &str| {
+        args.iter()
+            .position(|a| a == nome)
+            .and_then(|i| args.get(i + 1).cloned())
+    };
+    // The language: `--idioma`, else the one chosen in the profile, else Portuguese.
+    let idioma = valor("--idioma").or_else(|| Perfil::padrao().and_then(|p| p.config().idioma));
+    if let Some(i) = &idioma {
+        texto::definir(Idioma::de_codigo(i));
+    }
     match args.first().map(String::as_str) {
         Some("--versao" | "--version" | "-V") => {
             println!("utsim-ensino {}", env!("CARGO_PKG_VERSION"));
             return ExitCode::SUCCESS;
         }
         Some("--ajuda" | "--help" | "-h") => {
-            println!(
-                "utsim-ensino [--pacote <pasta|pacote.utse>] [--missao <id>]\n  abre a janela do UTSim Ensino\n  --pacote: abre esse pacote de missões no lugar da campanha\n  --missao ato4/ventilador: abre essa missão direto (demonstração em aula)\n  UTSIM_ENSINO_PERFIL=<pasta>: guarda o perfil nessa pasta (computadores de laboratório)\n\nConstrutor de casos (o resultado também fica em <pasta>/conferencia.txt):\n  utsim-ensino caso <modelo.ron> <pasta> [título]: missão de rascunho a partir de um modelo\n  utsim-ensino conferir <pasta|pacote.utse>: confere as missões de um pacote\n  utsim-ensino pacote <pasta> <pacote.utse>: empacota a pasta"
-            );
+            println!("{}", texto::ajuda_cli());
             return ExitCode::SUCCESS;
         }
         Some("caso") if args.len() >= 3 => {
-            let titulo = args.get(3).cloned().unwrap_or_else(|| "Missão nova".into());
+            let titulo = args
+                .get(3)
+                .cloned()
+                .unwrap_or_else(|| texto::missao_nova().into());
             return relatar(
                 caso::criar_caso(Path::new(&args[1]), Path::new(&args[2]), &titulo),
                 None,
@@ -72,26 +84,24 @@ fn main() -> ExitCode {
         Some("pacote") if args.len() >= 3 => {
             return relatar(
                 caso::empacotar(Path::new(&args[1]), Path::new(&args[2]))
-                    .map(|p| format!("pacote gravado em {}", p.display())),
+                    .map(|p| texto::f(texto::pacote_gravado(), &[&p.display()])),
                 None,
             );
         }
         // A builder command with missing arguments: never open the window by accident.
         Some("caso" | "conferir" | "pacote") => {
-            eprintln!("faltam argumentos; veja utsim-ensino --ajuda");
+            eprintln!("{}", texto::faltam_argumentos());
             return ExitCode::FAILURE;
         }
         _ => {}
     }
-    let valor = |nome: &str| {
-        args.iter()
-            .position(|a| a == nome)
-            .and_then(|i| args.get(i + 1).cloned())
-    };
     let missao = valor("--missao");
     let pacote = valor("--pacote").map(PathBuf::from);
     let Some(perfil) = Perfil::padrao() else {
-        eprintln!("erro: não encontrei a pasta do usuário");
+        eprintln!(
+            "{}",
+            texto::f(texto::erro(), &[&texto::sem_pasta_usuario()])
+        );
         return ExitCode::FAILURE;
     };
     let mut viewport = egui::ViewportBuilder::default()
@@ -117,10 +127,13 @@ fn main() -> ExitCode {
             cc.egui_ctx
                 .set_pixels_per_point(cc.egui_ctx.pixels_per_point().max(1.1));
             let mut app = App::new(perfil);
+            if let Some(i) = &idioma {
+                texto::definir(Idioma::de_codigo(i));
+            }
             if let Some(c) = &pacote
                 && let Err(e) = app.abrir_pacote(c)
             {
-                app.mensagem = Some(format!("o pacote não abriu: {e}"));
+                app.mensagem = Some(texto::f(texto::pacote_nao_abriu(), &[&e]));
             }
             if let Some(id) = &missao
                 && app.config.identidade.is_some()
@@ -134,7 +147,7 @@ fn main() -> ExitCode {
     match result {
         Ok(()) => ExitCode::SUCCESS,
         Err(e) => {
-            eprintln!("erro na janela: {e}");
+            eprintln!("{}", texto::f(texto::erro_janela(), &[&e]));
             ExitCode::FAILURE
         }
     }
