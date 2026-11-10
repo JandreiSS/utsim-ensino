@@ -53,10 +53,12 @@ fn main() -> ExitCode {
             .position(|a| a == nome)
             .and_then(|i| args.get(i + 1).cloned())
     };
-    // The language: `--idioma`, else the one chosen in the profile, else Portuguese.
+    // The language: `--idioma`, else the one chosen in the profile, else the system's (the
+    // first run), else Portuguese.
     let idioma = valor("--idioma").or_else(|| Perfil::padrao().and_then(|p| p.config().idioma));
-    if let Some(i) = &idioma {
-        texto::definir(Idioma::de_codigo(i));
+    match &idioma {
+        Some(i) => texto::definir(texto::idioma_de(i)),
+        None => texto::definir(Idioma::inicial()),
     }
     match args.first().map(String::as_str) {
         Some("--versao" | "--version" | "-V") => {
@@ -129,7 +131,7 @@ fn main() -> ExitCode {
                 .set_pixels_per_point(cc.egui_ctx.pixels_per_point().max(1.1));
             let mut app = App::new(perfil);
             if let Some(i) = &idioma {
-                texto::definir(Idioma::de_codigo(i));
+                texto::definir(texto::idioma_de(i));
             }
             if let Some(c) = &pacote
                 && let Err(e) = app.abrir_pacote(c)
