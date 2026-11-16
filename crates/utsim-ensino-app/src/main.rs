@@ -4,7 +4,6 @@
 
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
-use std::sync::Arc;
 
 use eframe::egui;
 use utsim_ensino_store::caso;
@@ -107,20 +106,13 @@ fn main() -> ExitCode {
         );
         return ExitCode::FAILURE;
     };
-    let mut viewport = egui::ViewportBuilder::default()
-        .with_title(NOME_APP)
-        .with_inner_size([1180.0, 800.0])
-        .with_min_inner_size([760.0, 480.0])
-        .with_maximized(true);
-    if let Some((w, h, rgba)) = utsim_ui_tema::familia::png_rgba(ICONE) {
-        viewport = viewport.with_icon(Arc::new(egui::IconData {
-            rgba,
-            width: w as u32,
-            height: h as u32,
-        }));
-    }
     let options = eframe::NativeOptions {
-        viewport,
+        viewport: utsim_ui_tema::janela::viewport(
+            NOME_APP,
+            [1180.0, 800.0],
+            [760.0, 480.0],
+            Some(ICONE),
+        ),
         ..Default::default()
     };
     let result = eframe::run_native(
