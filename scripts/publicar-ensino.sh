@@ -42,6 +42,12 @@ cp "$BIN" "$PASTA/ensino/bin/"
 cp docs/manual/src/ensino.md "$PASTA/ensino/manual/"
 # Os pacotes de missões fora da campanha: o app os lista sozinho (bin/../pacotes).
 cp -r ensino/pacotes "$PASTA/ensino/pacotes"
+# Os elementos 3D, para o editor de missões gerar a imagem do enunciado com o Blender do
+# professor (o app os procura em bin/../assets/modelos3d): os modelos e os clipes das pessoas,
+# com a licença deles.
+mkdir -p "$PASTA/ensino/assets/terceiros"
+cp -r assets/modelos3d "$PASTA/ensino/assets/modelos3d"
+cp -r assets/terceiros/quaternius_ual "$PASTA/ensino/assets/terceiros/quaternius_ual"
 
 if grep -q "^## \[ensino-$VERSAO\]" CHANGELOG.md; then
     bash scripts/notas-versao.sh "ensino-$VERSAO" > "$PASTA/notas.md"
