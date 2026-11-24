@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Publica o UTSim Ensino pelo launcher, como produto próprio (`ensino`): monta a pasta do
-# programa, cifra, assina e grava o pacote e o manifesto na pasta de publicação (a pasta do
-# Google Drive). Não envia nada à internet: o Google Drive para computador sincroniza a pasta.
+# programa, cifra, assina e grava o pacote e o manifesto na pasta de publicação (local).
+# Não envia nada à internet: depois, 'utsim-publicar github' sobe o pacote e o
+# manifesto para o GitHub.
 # O launcher já instalado passa a mostrar o produto; ele não precisa mudar.
 #
 # Uso: bash scripts/publicar-ensino.sh <pasta_de_publicação> [canal] [versão]
