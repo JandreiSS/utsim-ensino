@@ -6,7 +6,7 @@
 # O launcher já instalado passa a mostrar o produto; ele não precisa mudar.
 #
 # Uso: bash scripts/publicar-ensino.sh <pasta_de_publicação> [canal] [versão]
-#   canal   padrão: testes (ou estavel, que pode ter acesso aberto para os alunos)
+#   canal   padrão: estavel (o launcher 0.4.0 mostra todos; o canal só conta para launchers antigos)
 #   versão  padrão: a de crates/utsim-ensino-app/Cargo.toml (versão própria, tag ensino-v<versão>)
 #
 # Antes: cargo build --release -p utsim-ensino-app -p utsim-publicar
@@ -19,7 +19,7 @@ cd "$(dirname "$0")/.." || exit 1
 
 [ $# -ge 1 ] || { echo "uso: $0 <pasta_de_publicação> [canal] [versão]" >&2; exit 2; }
 SAIDA=$1
-CANAL=${2:-testes}
+CANAL=${2:-estavel}
 VERSAO=${3:-$(awk -F'"' '/^version = /{print $2; exit}' crates/utsim-ensino-app/Cargo.toml)}
 VERSAO=${VERSAO#ensino-}
 VERSAO=${VERSAO#v}
