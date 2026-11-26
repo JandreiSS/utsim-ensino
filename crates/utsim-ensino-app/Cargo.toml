@@ -11,8 +11,8 @@ name = "utsim-ensino"
 path = "src/main.rs"
 
 [dependencies]
-utsim-ensino-ui = { path = "../utsim-ensino-ui" }
-utsim-ensino-store = { path = "../utsim-ensino-store" }
+utsim-ensino-ui = { workspace = true }
+utsim-ensino-store = { workspace = true }
 # Same egui as the launcher and the Seis Sigma app; glow renderer only (lab computers
 # without a graphics card).
 # The family icon on the title bar (PNG decoding of `familia`).
