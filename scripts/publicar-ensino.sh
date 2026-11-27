@@ -36,19 +36,26 @@ esac
 BIN=target/release/$NOME
 [ -f "$BIN" ] || { echo "erro: $BIN não encontrado; rode antes cargo build --release -p utsim-ensino-app" >&2; exit 1; }
 
+# Os pacotes de missões e os elementos 3D moram na família (utsim-familia), na tag do
+# Cargo.toml: vêm do checkout que o cargo baixou (ou de UTSIM_FAMILIA, uma pasta local).
+FAMILIA=${UTSIM_FAMILIA:-$(cargo metadata --format-version 1 --offline 2>/dev/null \
+    | grep -o '"manifest_path":"[^"]*utsim-ensino-core[^"]*"' | head -1 \
+    | sed -e 's/^"manifest_path":"//' -e 's/"$//' -e 's#\\\\*#/#g' -e 's#/crates/utsim-ensino-core/Cargo.toml$##')}
+[ -d "$FAMILIA/ensino/pacotes" ] || { echo "erro: pacotes da família não encontrados (rode antes o build ou defina UTSIM_FAMILIA)" >&2; exit 1; }
+
 PASTA=$(mktemp -d)
 trap 'rm -rf "$PASTA"' EXIT
 mkdir -p "$PASTA/ensino/bin" "$PASTA/ensino/manual"
 cp "$BIN" "$PASTA/ensino/bin/"
 cp docs/manual/src/ensino.md "$PASTA/ensino/manual/"
 # Os pacotes de missões fora da campanha: o app os lista sozinho (bin/../pacotes).
-cp -r ensino/pacotes "$PASTA/ensino/pacotes"
+cp -r "$FAMILIA/ensino/pacotes" "$PASTA/ensino/pacotes"
 # Os elementos 3D, para o editor de missões gerar a imagem do enunciado com o Blender do
 # professor (o app os procura em bin/../assets/modelos3d): os modelos e os clipes das pessoas,
 # com a licença deles.
 mkdir -p "$PASTA/ensino/assets/terceiros"
-cp -r assets/modelos3d "$PASTA/ensino/assets/modelos3d"
-cp -r assets/terceiros/quaternius_ual "$PASTA/ensino/assets/terceiros/quaternius_ual"
+cp -r "$FAMILIA/assets/modelos3d" "$PASTA/ensino/assets/modelos3d"
+cp -r "$FAMILIA/assets/terceiros/quaternius_ual" "$PASTA/ensino/assets/terceiros/quaternius_ual"
 
 if grep -q "^## \[ensino-$VERSAO\]" CHANGELOG.md; then
     bash scripts/notas-versao.sh "ensino-$VERSAO" > "$PASTA/notas.md"
